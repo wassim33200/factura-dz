@@ -1,0 +1,133 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  company      Company?
+}
+
+model Company {
+  id        String            @id @default(cuid())
+  userId    String            @unique
+  user      User              @relation(fields: [userId], references: [id])
+  name      String
+  logoUrl   String?
+  address   String?
+  wilaya    String?
+  phone     String?
+  email     String?
+  rc        String?           // Registre de Commerce
+  nif       String?           // Numéro d'Identification Fiscale
+  ai        String?           // Article d'Imposition
+  nis       String?           // Numéro d'Identification Statistique
+  rib       String?           // Bank account (CCP / Bank RIB)
+  clients   Client[]
+  products  Product[]
+  documents Document[]
+  counters  DocumentCounter[]
+}
+
+model DocumentCounter {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  docType    String   // FACTURE, DEVIS, PROFORMA, BON_COMMANDE, BON_LIVRAISON
+  year       Int
+  lastNumber Int      @default(0)
+
+  @@unique([companyId, docType, year])
+}
+
+model Client {
+  id        String     @id @default(cuid())
+  companyId String
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  type      String     @default("INDIVIDUAL") // INDIVIDUAL | BUSINESS
+  name      String
+  address   String?
+  wilaya    String?
+  phone     String?
+  email     String?
+  rc        String?
+  nif       String?
+  documents Document[]
+  createdAt DateTime   @default(now())
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  companyId        String
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  designation      String
+  unit             String   @default("unité")
+  defaultUnitPrice Float
+  defaultTvaRate   Int      @default(19) // 0 | 9 | 19
+  createdAt        DateTime @default(now())
+}
+
+model Document {
+  id              String         @id @default(cuid())
+  companyId       String
+  company         Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  type            String         // FACTURE | DEVIS | PROFORMA | BON_COMMANDE | BON_LIVRAISON
+  number          String         // e.g. FAC-2026-0042
+  status          String         // BROUILLON | ENVOYE | ACCEPTE | REFUSE | CONFIRME | LIVRE | PARTIELLEMENT_PAYEE | PAYEE | EN_RETARD
+  issueDate       DateTime
+  dueDate         DateTime?
+  clientId        String?
+  client          Client?        @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientSnapshot  String         // JSON stringified client info
+  companySnapshot String         // JSON stringified company info
+  paymentMethod   String?        // ESPECES | VIREMENT | CHEQUE | CARTE | CCP
+  notes           String?
+  convertedFromId String?        // set on a Facture generated from a Devis/Proforma
+  convertedFrom   Document?      @relation("Conversion", fields: [convertedFromId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  convertedTo     Document[]     @relation("Conversion")
+  lines           DocumentLine[]
+  payments        Payment[]
+  subtotalHT      Float
+  totalTVA        Float
+  stampDuty       Float          @default(0)
+  totalTTC        Float
+  amountPaid      Float          @default(0)
+  balanceDue      Float
+  amountInWords   String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([companyId, type, number])
+}
+
+model DocumentLine {
+  id          String   @id @default(cuid())
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  productId   String?  // nullable: line survives even if product is deleted
+  designation String
+  quantity    Float
+  unit        String   @default("unité")
+  unitPrice   Float
+  discountPct Float    @default(0)
+  tvaRate     Int      // 0 | 9 | 19
+  totalHT     Float
+  position    Int
+}
+
+model Payment {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  amount     Float
+  date       DateTime
+  method     String   // ESPECES | VIREMENT | CHEQUE | CARTE | CCP
+  note       String?
+}
