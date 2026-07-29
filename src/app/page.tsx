@@ -412,10 +412,13 @@ export default function LandingPage() {
             <span className="text-slate-500">| Conçu pour les entreprises en Algérie</span>
           </div>
 
-          <div className="flex space-x-6 text-slate-400">
-            <Link href="/login" className="hover:text-white">Se connecter</Link>
-            <Link href="/signup" className="hover:text-white">Créer un compte</Link>
-            <Link href="/create?type=FACTURE" className="hover:text-white">Créer une facture</Link>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-slate-400">
+            <Link href="/login" className="hover:text-white transition">Se connecter</Link>
+            <Link href="/signup" className="hover:text-white transition">Créer un compte</Link>
+            <Link href="/create?type=FACTURE" className="hover:text-white transition">Créer une facture</Link>
+            <span className="text-slate-700 hidden sm:inline">|</span>
+            <Link href="/privacy" className="hover:text-white transition">Confidentialité</Link>
+            <Link href="/terms" className="hover:text-white transition">CGU</Link>
           </div>
         </div>
       </footer>

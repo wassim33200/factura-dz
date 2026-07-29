@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useRepository } from '@/lib/repository/useRepository';
-import { UserPlus, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { UserPlus, ArrowRight, CheckCircle2, Shield } from 'lucide-react';
 import { GoogleButton } from '@/components/auth/GoogleButton';
 
 export default function SignupPage() {
@@ -17,6 +17,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,10 +139,31 @@ export default function SignupPage() {
               <p>Vos documents et clients saisis avant la création de votre compte seront sauvegardés dans votre espace entreprise.</p>
             </div>
 
+            {/* Legal consent checkbox */}
+            <label className="flex items-start space-x-2.5 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#1C4A3D] focus:ring-[#1C4A3D] focus:ring-offset-0 cursor-pointer accent-[#1C4A3D]"
+              />
+              <span className="text-[11px] text-slate-600 leading-relaxed group-hover:text-slate-800 transition">
+                J&apos;ai lu et j&apos;accepte les{' '}
+                <Link href="/terms" target="_blank" className="text-[#1C4A3D] font-bold hover:underline">
+                  Conditions Générales d&apos;Utilisation
+                </Link>{' '}
+                et la{' '}
+                <Link href="/privacy" target="_blank" className="text-[#1C4A3D] font-bold hover:underline">
+                  Politique de Confidentialité
+                </Link>{' '}
+                de FacturaDZ.
+              </span>
+            </label>
+
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-[#1C4A3D] text-white py-3 rounded-xl font-bold text-sm shadow hover:bg-[#15382e] transition flex items-center justify-center space-x-2"
+              disabled={loading || !agreed}
+              className={`w-full py-3 rounded-xl font-bold text-sm shadow transition flex items-center justify-center space-x-2 ${agreed ? 'bg-[#1C4A3D] text-white hover:bg-[#15382e]' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
             >
               <span>{loading ? 'Création en cours...' : 'Créer mon compte avec Email'}</span>
               <ArrowRight className="w-4 h-4" />

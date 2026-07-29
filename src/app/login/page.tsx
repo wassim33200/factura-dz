@@ -98,6 +98,18 @@ export default function LoginPage() {
             </button>
           </form>
 
+          <div className="text-center text-[10px] text-slate-400 leading-relaxed px-2">
+            En vous connectant, vous acceptez les{' '}
+            <Link href="/terms" target="_blank" className="text-[#1C4A3D] font-semibold hover:underline">
+              CGU
+            </Link>{' '}
+            et la{' '}
+            <Link href="/privacy" target="_blank" className="text-[#1C4A3D] font-semibold hover:underline">
+              Politique de Confidentialité
+            </Link>{' '}
+            de FacturaDZ.
+          </div>
+
           <div className="text-center pt-4 border-t border-slate-100 text-xs text-slate-500">
             Vous n&apos;avez pas de compte ?{' '}
             <Link href="/signup" className="text-[#1C4A3D] font-bold hover:underline">

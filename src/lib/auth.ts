@@ -45,14 +45,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user, account, profile }) {
       if (account?.provider === 'google' && user.email) {
         const email = user.email.toLowerCase().trim();
-        let dbUser = await prisma.user.findUnique({
+        const findResult = await prisma.user.findUnique({
           where: { email },
           include: { company: true },
         });
+        let dbUser: NonNullable<typeof findResult> | null = findResult;
 
         if (!dbUser) {
           const companyName = profile?.name ? `Entreprise ${profile.name}` : 'Mon Entreprise';
-          dbUser = await prisma.user.create({
+          const created = await prisma.user.create({
             data: {
               email,
               company: {
@@ -61,9 +62,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                   wilaya: '16 - Alger',
                 },
               },
-            },
+            } as Parameters<typeof prisma.user.create>[0]['data'],
             include: { company: true },
           });
+          dbUser = created as NonNullable<typeof findResult>;
         } else if (!dbUser.company) {
           const company = await prisma.company.create({
             data: {
@@ -75,9 +77,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           dbUser.company = company;
         }
 
-        user.id = dbUser.id;
-        (user as any).companyId = dbUser.company?.id;
-        (user as any).companyName = dbUser.company?.name;
+        user.id = dbUser!.id;
+        (user as any).companyId = dbUser!.company?.id;
+        (user as any).companyName = dbUser!.company?.name;
       }
       return true;
     },
