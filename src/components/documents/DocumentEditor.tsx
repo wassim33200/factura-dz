@@ -9,7 +9,9 @@ import { amountInWords } from '@/lib/calc/numberToWords';
 import { DocumentPreview } from './DocumentPreview';
 import { TotalsPanel } from './TotalsPanel';
 import { NumberInput } from '@/components/ui/NumberInput';
-import { Plus, Trash2, Save, FileText, Download, UserPlus, Eye, Edit3, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Save, FileText, Download, UserPlus, Eye, Edit3, ArrowLeft, Building, Sparkles } from 'lucide-react';
+
+const DEFAULT_COMPANY_NAME = 'Mon Entreprise DZ';
 
 interface DocumentEditorProps {
   initialData?: DocumentData | null;
@@ -18,7 +20,7 @@ interface DocumentEditorProps {
 export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialData }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { repositories } = useRepository();
+  const { repositories, isGuest } = useRepository();
 
   const queryType = (searchParams.get('type') as DocType) || 'FACTURE';
 
@@ -40,6 +42,13 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialData }) =
   const [clients, setClients] = useState<ClientData[]>([]);
   const [products, setProducts] = useState<ProductData[]>([]);
   const [company, setCompany] = useState<any>({});
+
+  // Company Modal State (Guest & Authenticated)
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [companyFormData, setCompanyFormData] = useState<any>({});
+  // Guest first-time setup gate
+  const [isGuestSetupRequired, setIsGuestSetupRequired] = useState(false);
+  const [isCheckingSetup, setIsCheckingSetup] = useState(true);
 
   const [selectedClientId, setSelectedClientId] = useState<string>(initialData?.clientId || '');
   const [clientSnapshot, setClientSnapshot] = useState<Partial<ClientData>>(initialData?.clientSnapshot || {});
@@ -94,9 +103,17 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialData }) =
         const generated = await repositories.documents.generateNumber(docType);
         setDocNumber(generated);
       }
+
+      // Check if guest needs to set up company info first
+      if (isGuest && (!compData || compData.name === DEFAULT_COMPANY_NAME)) {
+        setCompanyFormData(compData || {});
+        setIsGuestSetupRequired(true);
+        setShowCompanyModal(true);
+      }
+      setIsCheckingSetup(false);
     }
     loadData();
-  }, [repositories, docType, initialData]);
+  }, [repositories, docType, initialData, isGuest]);
 
   // When Client selection changes
   const handleClientChange = (clientId: string) => {
@@ -104,6 +121,23 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialData }) =
     const found = clients.find((c) => c.id === clientId);
     if (found) {
       setClientSnapshot(found);
+    }
+  };
+
+  const handleOpenCompanyModal = () => {
+    setCompanyFormData(company || {});
+    setShowCompanyModal(true);
+  };
+
+  const handleSaveCompany = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const updated = await repositories.company.save(companyFormData);
+      setCompany(updated);
+      setShowCompanyModal(false);
+      setIsGuestSetupRequired(false);
+    } catch (err) {
+      console.error('Failed to save company profile:', err);
     }
   };
 
@@ -225,6 +259,15 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialData }) =
       setIsSaving(false);
     }
   };
+
+  // Show a loading screen while checking setup status
+  if (isCheckingSetup) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="text-slate-500 text-sm">Chargement de l&apos;éditeur...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 pb-24 sm:pb-16">
@@ -372,6 +415,39 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialData }) =
                   </select>
                 </div>
               )}
+            </div>
+
+            {/* Company Info Card (Émetteur) */}
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+              <div className="flex justify-between items-center border-b pb-2">
+                <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide">
+                  Émetteur (Votre Entreprise)
+                </h2>
+                <button
+                  type="button"
+                  onClick={handleOpenCompanyModal}
+                  className="text-xs text-[#1C4A3D] font-semibold flex items-center space-x-1 hover:underline bg-[#1C4A3D]/10 px-2.5 py-1 rounded-lg"
+                >
+                  <Building className="w-3.5 h-3.5" />
+                  <span>Éditer Mon Entreprise</span>
+                </button>
+              </div>
+
+              <div className="flex justify-between items-start text-xs text-slate-700">
+                <div className="space-y-1">
+                  <div className="font-bold text-slate-900 text-sm">{company?.name || 'Mon Entreprise DZ'}</div>
+                  {company?.address && <div className="text-slate-600">{company.address}</div>}
+                  {company?.wilaya && <div className="text-slate-600">{company.wilaya}</div>}
+                  <div className="text-slate-500 pt-0.5 flex flex-wrap gap-x-3 gap-y-1">
+                    {company?.phone && <span>Tél: {company.phone}</span>}
+                    {company?.rc && <span>RC: {company.rc}</span>}
+                    {company?.nif && <span>NIF: {company.nif}</span>}
+                  </div>
+                </div>
+                {company?.logoUrl && (
+                  <img src={company.logoUrl} alt="Logo" className="h-10 w-10 object-contain rounded border border-slate-200 bg-white" />
+                )}
+              </div>
             </div>
 
             {/* Client Picker Card */}
@@ -701,6 +777,194 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialData }) =
                   className="px-4 py-2 bg-[#1C4A3D] text-white rounded font-semibold hover:bg-[#15382e]"
                 >
                   Créer & Sélectionner
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Company Profile Inline Dialog */}
+      {showCompanyModal && (
+        <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${
+          isGuestSetupRequired
+            ? 'bg-gradient-to-br from-[#1C4A3D]/95 to-slate-900/95 backdrop-blur-md'
+            : 'bg-slate-900/50 backdrop-blur-sm'
+        }`}>
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b pb-3">
+              <div>
+                {isGuestSetupRequired ? (
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> Première utilisation
+                    </span>
+                  </div>
+                ) : null}
+                <h3 className="text-base font-bold text-slate-900">
+                  {isGuestSetupRequired ? 'Configurez votre entreprise' : 'Informations de votre Entreprise'}
+                </h3>
+                {isGuestSetupRequired && (
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Ces informations apparaîtront sur toutes vos factures et documents.
+                  </p>
+                )}
+              </div>
+              {!isGuestSetupRequired && (
+                <span className="text-[11px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded">
+                  Émetteur des factures
+                </span>
+              )}
+            </div>
+
+            <form onSubmit={handleSaveCompany} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Raison Sociale / Nom Entreprise *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="ex: EURL Mon Entreprise DZ"
+                  value={companyFormData.name || ''}
+                  onChange={(e) => setCompanyFormData({ ...companyFormData, name: e.target.value })}
+                  className="w-full border-slate-300 rounded p-2 border font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">URL du Logo</label>
+                  <input
+                    type="url"
+                    placeholder="https://.../logo.png"
+                    value={companyFormData.logoUrl || ''}
+                    onChange={(e) => setCompanyFormData({ ...companyFormData, logoUrl: e.target.value })}
+                    className="w-full border-slate-300 rounded p-2 border"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Wilaya</label>
+                  <input
+                    type="text"
+                    placeholder="16 - Alger"
+                    value={companyFormData.wilaya || ''}
+                    onChange={(e) => setCompanyFormData({ ...companyFormData, wilaya: e.target.value })}
+                    className="w-full border-slate-300 rounded p-2 border"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Adresse physique</label>
+                <input
+                  type="text"
+                  placeholder="Zone industrielle, Alger"
+                  value={companyFormData.address || ''}
+                  onChange={(e) => setCompanyFormData({ ...companyFormData, address: e.target.value })}
+                  className="w-full border-slate-300 rounded p-2 border"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Téléphone</label>
+                  <input
+                    type="text"
+                    placeholder="0550 00 00 00"
+                    value={companyFormData.phone || ''}
+                    onChange={(e) => setCompanyFormData({ ...companyFormData, phone: e.target.value })}
+                    className="w-full border-slate-300 rounded p-2 border"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Email professionnel</label>
+                  <input
+                    type="email"
+                    placeholder="contact@entreprise.dz"
+                    value={companyFormData.email || ''}
+                    onChange={(e) => setCompanyFormData({ ...companyFormData, email: e.target.value })}
+                    className="w-full border-slate-300 rounded p-2 border"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100">
+                <span className="block font-bold text-slate-800 uppercase tracking-wide text-[11px] mb-2">
+                  Identifiants Fiscaux Algériens
+                </span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">RC (Registre Commerce)</label>
+                    <input
+                      type="text"
+                      placeholder="16/00-1234567B26"
+                      value={companyFormData.rc || ''}
+                      onChange={(e) => setCompanyFormData({ ...companyFormData, rc: e.target.value })}
+                      className="w-full border-slate-300 rounded p-2 border font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">NIF (Identification Fiscale)</label>
+                    <input
+                      type="text"
+                      placeholder="002616123456789"
+                      value={companyFormData.nif || ''}
+                      onChange={(e) => setCompanyFormData({ ...companyFormData, nif: e.target.value })}
+                      className="w-full border-slate-300 rounded p-2 border font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">AI (Article Imposition)</label>
+                    <input
+                      type="text"
+                      placeholder="16011234567"
+                      value={companyFormData.ai || ''}
+                      onChange={(e) => setCompanyFormData({ ...companyFormData, ai: e.target.value })}
+                      className="w-full border-slate-300 rounded p-2 border font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">NIS (Identification Statistique)</label>
+                    <input
+                      type="text"
+                      placeholder="002616011234567"
+                      value={companyFormData.nis || ''}
+                      onChange={(e) => setCompanyFormData({ ...companyFormData, nis: e.target.value })}
+                      className="w-full border-slate-300 rounded p-2 border font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Coordonnées Bancaires / RIB / CCP</label>
+                <input
+                  type="text"
+                  placeholder="ex: RIB BNA: 001 00810 0300 000123 45 | CCP: 007999999 Clé 99"
+                  value={companyFormData.rib || ''}
+                  onChange={(e) => setCompanyFormData({ ...companyFormData, rib: e.target.value })}
+                  className="w-full border-slate-300 rounded p-2 border font-mono"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4 border-t">
+                {!isGuestSetupRequired && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCompanyModal(false)}
+                    className="px-4 py-2 border rounded text-slate-600 hover:bg-slate-50 font-semibold"
+                  >
+                    Annuler
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className={`px-4 py-2 text-white rounded font-bold shadow transition ${
+                    isGuestSetupRequired
+                      ? 'bg-[#1C4A3D] hover:bg-[#15382e] w-full py-3 text-sm'
+                      : 'bg-[#1C4A3D] hover:bg-[#15382e]'
+                  }`}
+                >
+                  {isGuestSetupRequired ? '✓ Commencer à créer mes documents' : 'Enregistrer l\'Entreprise'}
                 </button>
               </div>
             </form>
