@@ -6,10 +6,13 @@ import { useRouter } from 'next/navigation';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { GuestBanner } from '@/components/layout/GuestBanner';
 import { DocumentPreview } from '@/components/documents/DocumentPreview';
+import { DocumentPdfTemplate } from '@/components/pdf/DocumentPdfTemplate';
 import { useRepository } from '@/lib/repository/useRepository';
 import { DocumentData, PaymentMethod } from '@/lib/types';
 import { formatDA } from '@/lib/utils/format';
 import { NumberInput } from '@/components/ui/NumberInput';
+import { pdf } from '@react-pdf/renderer';
+
 import {
   Download,
   Printer,
@@ -76,10 +79,26 @@ export default function DocumentDetailPage({
   const isDraft = doc.status === 'BROUILLON';
 
   // Handle PDF Export
-  const handleDownloadPdf = () => {
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
+
+  const handleDownloadPdf = async () => {
     if (isGuest) {
-      // Guest mode uses print stylesheet window.print()
-      window.print();
+      // Guest mode: generate PDF blob in-browser via @react-pdf/renderer
+      setIsPdfGenerating(true);
+      try {
+        const element = React.createElement(DocumentPdfTemplate, { doc: doc as any });
+        const blob = await pdf(element as any).toBlob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${doc.number}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('Guest PDF generation failed:', err);
+      } finally {
+        setIsPdfGenerating(false);
+      }
     } else {
       window.open(`/api/documents/${doc.id}/pdf`, '_blank');
     }
@@ -110,8 +129,10 @@ export default function DocumentDetailPage({
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col text-slate-900">
-      <GuestBanner />
-      <AppNavbar />
+      <div className="print:hidden">
+        <GuestBanner />
+        <AppNavbar />
+      </div>
 
       {/* Action Bar Header */}
       <div className="bg-white border-b border-slate-200 sticky top-16 z-20 px-4 sm:px-8 py-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 print:hidden">
@@ -188,10 +209,11 @@ export default function DocumentDetailPage({
           {/* Download PDF */}
           <button
             onClick={handleDownloadPdf}
-            className="px-4 py-2 text-xs font-semibold bg-[#1C4A3D] text-white rounded-lg hover:bg-[#15382e] flex items-center space-x-1.5 shadow-sm"
+            disabled={isPdfGenerating}
+            className="px-4 py-2 text-xs font-semibold bg-[#1C4A3D] text-white rounded-lg hover:bg-[#15382e] flex items-center space-x-1.5 shadow-sm disabled:opacity-60 disabled:cursor-wait"
           >
             <Download className="w-4 h-4" />
-            <span>Télécharger PDF</span>
+            <span>{isPdfGenerating ? 'Génération...' : 'Télécharger PDF'}</span>
           </button>
         </div>
       </div>
