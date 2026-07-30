@@ -197,62 +197,110 @@ export default function DashboardPage() {
               </Link>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
-                    <th className="py-3 px-2">Numéro</th>
-                    <th className="py-3 px-2">Type</th>
-                    <th className="py-3 px-2">Client</th>
-                    <th className="py-3 px-2">Date</th>
-                    <th className="py-3 px-2 text-right">Net à payer</th>
-                    <th className="py-3 px-2 text-center">Statut</th>
-                    <th className="py-3 px-2 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {recentDocs.map((doc) => {
-                    const isPaid = doc.status === 'PAYEE';
-                    return (
-                      <tr key={doc.id} className="hover:bg-slate-50/80 transition">
-                        <td className="py-3 px-2 font-mono font-bold text-[#1C4A3D]">
-                          {doc.number}
-                        </td>
-                        <td className="py-3 px-2 font-medium text-slate-700">{doc.type}</td>
-                        <td className="py-3 px-2 font-medium text-slate-900">
-                          {doc.clientSnapshot?.name || 'Client sans nom'}
-                        </td>
-                        <td className="py-3 px-2 text-slate-500">{formatDate(doc.issueDate)}</td>
-                        <td className="py-3 px-2 text-right font-mono font-bold text-slate-900">
-                          {formatDA(doc.stampDuty ? doc.subtotalHT + doc.totalTVA + doc.stampDuty : doc.totalTTC)}
-                        </td>
-                        <td className="py-3 px-2 text-center">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold inline-block ${
-                              isPaid
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : doc.status === 'BROUILLON'
-                                ? 'bg-slate-100 text-slate-700'
-                                : 'bg-amber-100 text-amber-800'
-                            }`}
-                          >
-                            {doc.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-2 text-right">
-                          <Link
-                            href={`/app/documents/${doc.id}`}
-                            className="inline-flex items-center space-x-1 text-[#1C4A3D] font-bold text-xs hover:underline"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>Voir</span>
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div>
+              {/* Mobile Card List View */}
+              <div className="space-y-3 md:hidden">
+                {recentDocs.map((doc) => {
+                  const isPaid = doc.status === 'PAYEE';
+                  const netTotal = doc.stampDuty
+                    ? doc.subtotalHT + doc.totalTVA + doc.stampDuty
+                    : doc.totalTTC;
+
+                  return (
+                    <div key={doc.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono font-bold text-[#1C4A3D] text-sm">{doc.number}</span>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            isPaid
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : doc.status === 'BROUILLON'
+                              ? 'bg-slate-100 text-slate-700'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {doc.status}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-800 font-medium">
+                        {doc.clientSnapshot?.name || 'Client sans nom'}
+                      </div>
+                      <div className="flex justify-between items-center text-xs pt-1.5 border-t border-slate-200">
+                        <span className="text-slate-500">{formatDate(doc.issueDate)}</span>
+                        <span className="font-mono font-bold text-slate-900">{formatDA(netTotal)}</span>
+                      </div>
+                      <div className="pt-1 flex justify-end">
+                        <Link
+                          href={`/app/documents/${doc.id}`}
+                          className="inline-flex items-center space-x-1 text-[#1C4A3D] font-bold text-xs bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm hover:bg-slate-100"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Voir le document</span>
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
+                      <th className="py-3 px-2">Numéro</th>
+                      <th className="py-3 px-2">Type</th>
+                      <th className="py-3 px-2">Client</th>
+                      <th className="py-3 px-2">Date</th>
+                      <th className="py-3 px-2 text-right">Net à payer</th>
+                      <th className="py-3 px-2 text-center">Statut</th>
+                      <th className="py-3 px-2 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {recentDocs.map((doc) => {
+                      const isPaid = doc.status === 'PAYEE';
+                      return (
+                        <tr key={doc.id} className="hover:bg-slate-50/80 transition">
+                          <td className="py-3 px-2 font-mono font-bold text-[#1C4A3D]">
+                            {doc.number}
+                          </td>
+                          <td className="py-3 px-2 font-medium text-slate-700">{doc.type}</td>
+                          <td className="py-3 px-2 font-medium text-slate-900">
+                            {doc.clientSnapshot?.name || 'Client sans nom'}
+                          </td>
+                          <td className="py-3 px-2 text-slate-500">{formatDate(doc.issueDate)}</td>
+                          <td className="py-3 px-2 text-right font-mono font-bold text-slate-900">
+                            {formatDA(doc.stampDuty ? doc.subtotalHT + doc.totalTVA + doc.stampDuty : doc.totalTTC)}
+                          </td>
+                          <td className="py-3 px-2 text-center">
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold inline-block ${
+                                isPaid
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : doc.status === 'BROUILLON'
+                                  ? 'bg-slate-100 text-slate-700'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
+                              {doc.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-2 text-right">
+                            <Link
+                              href={`/app/documents/${doc.id}`}
+                              className="inline-flex items-center space-x-1 text-[#1C4A3D] font-bold text-xs hover:underline"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Voir</span>
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

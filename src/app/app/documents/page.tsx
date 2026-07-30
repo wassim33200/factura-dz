@@ -190,105 +190,196 @@ export default function DocumentsPage() {
               <p className="text-sm font-medium text-slate-600">Aucun document trouvé</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
-                    <th className="py-3 px-4">Numéro</th>
-                    <th className="py-3 px-3">Type</th>
-                    <th className="py-3 px-4">Client</th>
-                    <th className="py-3 px-3">Date</th>
-                    <th className="py-3 px-4 text-right">Net à payer</th>
-                    <th className="py-3 px-3 text-center">Statut</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredDocs.map((doc) => {
-                    const isPaid = doc.status === 'PAYEE';
-                    const netTotal = doc.stampDuty
-                      ? doc.subtotalHT + doc.totalTVA + doc.stampDuty
-                      : doc.totalTTC;
+            <div>
+              {/* Mobile Card View */}
+              <div className="space-y-3 p-4 md:hidden">
+                {filteredDocs.map((doc) => {
+                  const isPaid = doc.status === 'PAYEE';
+                  const netTotal = doc.stampDuty
+                    ? doc.subtotalHT + doc.totalTVA + doc.stampDuty
+                    : doc.totalTTC;
 
-                    return (
-                      <tr key={doc.id} className="hover:bg-slate-50/80 transition">
-                        <td className="py-3.5 px-4 font-mono font-bold text-[#1C4A3D]">
-                          {doc.number}
-                        </td>
-                        <td className="py-3.5 px-3 font-medium text-slate-700">{doc.type}</td>
-                        <td className="py-3.5 px-4 font-medium text-slate-900">
-                          {doc.clientSnapshot?.name || 'Sans client'}
-                        </td>
-                        <td className="py-3.5 px-3 text-slate-500">{formatDate(doc.issueDate)}</td>
-                        <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900">
-                          {formatDA(netTotal)}
-                        </td>
-                        <td className="py-3.5 px-3 text-center">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold inline-block ${
-                              isPaid
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : doc.status === 'BROUILLON'
-                                ? 'bg-slate-100 text-slate-700'
-                                : doc.status === 'ACCEPTE'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-amber-100 text-amber-800'
-                            }`}
-                          >
-                            {doc.status}
+                  return (
+                    <div key={doc.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <span className="font-mono font-bold text-[#1C4A3D] text-sm">{doc.number}</span>
+                          <span className="ml-2 text-[10px] uppercase font-bold text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded">
+                            {doc.type}
                           </span>
-                        </td>
+                        </div>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            isPaid
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : doc.status === 'BROUILLON'
+                              ? 'bg-slate-100 text-slate-700'
+                              : doc.status === 'ACCEPTE'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {doc.status}
+                        </span>
+                      </div>
 
-                        <td className="py-3.5 px-4 text-right space-x-2">
-                          <Link
-                            href={`/app/documents/${doc.id}`}
-                            className="p-1.5 text-slate-600 hover:text-[#1C4A3D] rounded hover:bg-slate-100 inline-block"
-                            title="Voir"
+                      <div className="text-xs text-slate-800 font-medium">
+                        {doc.clientSnapshot?.name || 'Sans client'}
+                      </div>
+
+                      <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200">
+                        <span className="text-slate-500">{formatDate(doc.issueDate)}</span>
+                        <span className="font-mono font-bold text-slate-900">{formatDA(netTotal)}</span>
+                      </div>
+
+                      <div className="flex justify-end items-center gap-2 pt-2 border-t border-slate-200/60">
+                        <Link
+                          href={`/app/documents/${doc.id}`}
+                          className="px-3 py-1.5 text-xs font-semibold bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-100 flex items-center space-x-1"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-[#1C4A3D]" />
+                          <span>Voir</span>
+                        </Link>
+
+                        {(doc.type === 'DEVIS' || doc.type === 'PROFORMA') && (
+                          <button
+                            onClick={() => handleConvert(doc.id)}
+                            className="px-3 py-1.5 text-xs font-semibold bg-blue-50 border border-blue-200 rounded-lg text-blue-700 hover:bg-blue-100 flex items-center space-x-1"
                           >
-                            <Eye className="w-4 h-4" />
-                          </Link>
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span>Convertir</span>
+                          </button>
+                        )}
 
-                          {/* Devis -> Facture Conversion */}
-                          {(doc.type === 'DEVIS' || doc.type === 'PROFORMA') && (
-                            <button
-                              onClick={() => handleConvert(doc.id)}
-                              className="p-1.5 text-blue-600 hover:text-blue-800 rounded hover:bg-blue-50 inline-block"
-                              title="Convertir en Facture"
-                            >
-                              <RefreshCw className="w-4 h-4" />
-                            </button>
-                          )}
+                        {doc.type === 'FACTURE' && !isPaid && (
+                          <button
+                            onClick={() => {
+                              setPaymentDoc(doc);
+                              setPaymentAmount(doc.balanceDue || netTotal);
+                            }}
+                            className="px-3 py-1.5 text-xs font-semibold bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 hover:bg-emerald-100 flex items-center space-x-1"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>Payer</span>
+                          </button>
+                        )}
 
-                          {/* Record Payment */}
-                          {doc.type === 'FACTURE' && !isPaid && (
-                            <button
-                              onClick={() => {
-                                setPaymentDoc(doc);
-                                setPaymentAmount(doc.balanceDue || netTotal);
-                              }}
-                              className="p-1.5 text-emerald-600 hover:text-emerald-800 rounded hover:bg-emerald-50 inline-block"
-                              title="Enregistrer un paiement"
-                            >
-                              <CreditCard className="w-4 h-4" />
-                            </button>
-                          )}
+                        {doc.status === 'BROUILLON' && (
+                          <button
+                            onClick={() => handleDelete(doc.id)}
+                            className="p-1.5 text-red-500 hover:text-red-700 rounded-lg hover:bg-red-50"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
 
-                          {/* Delete Draft */}
-                          {doc.status === 'BROUILLON' && (
-                            <button
-                              onClick={() => handleDelete(doc.id)}
-                              className="p-1.5 text-red-500 hover:text-red-700 rounded hover:bg-red-50 inline-block"
-                              title="Supprimer"
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
+                      <th className="py-3 px-4">Numéro</th>
+                      <th className="py-3 px-3">Type</th>
+                      <th className="py-3 px-4">Client</th>
+                      <th className="py-3 px-3">Date</th>
+                      <th className="py-3 px-4 text-right">Net à payer</th>
+                      <th className="py-3 px-3 text-center">Statut</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredDocs.map((doc) => {
+                      const isPaid = doc.status === 'PAYEE';
+                      const netTotal = doc.stampDuty
+                        ? doc.subtotalHT + doc.totalTVA + doc.stampDuty
+                        : doc.totalTTC;
+
+                      return (
+                        <tr key={doc.id} className="hover:bg-slate-50/80 transition">
+                          <td className="py-3.5 px-4 font-mono font-bold text-[#1C4A3D]">
+                            {doc.number}
+                          </td>
+                          <td className="py-3.5 px-3 font-medium text-slate-700">{doc.type}</td>
+                          <td className="py-3.5 px-4 font-medium text-slate-900">
+                            {doc.clientSnapshot?.name || 'Sans client'}
+                          </td>
+                          <td className="py-3.5 px-3 text-slate-500">{formatDate(doc.issueDate)}</td>
+                          <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900">
+                            {formatDA(netTotal)}
+                          </td>
+                          <td className="py-3.5 px-3 text-center">
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold inline-block ${
+                                isPaid
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : doc.status === 'BROUILLON'
+                                  ? 'bg-slate-100 text-slate-700'
+                                  : doc.status === 'ACCEPTE'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                              {doc.status}
+                            </span>
+                          </td>
+
+                          <td className="py-3.5 px-4 text-right space-x-2">
+                            <Link
+                              href={`/app/documents/${doc.id}`}
+                              className="p-1.5 text-slate-600 hover:text-[#1C4A3D] rounded hover:bg-slate-100 inline-block"
+                              title="Voir"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Link>
+
+                            {/* Devis -> Facture Conversion */}
+                            {(doc.type === 'DEVIS' || doc.type === 'PROFORMA') && (
+                              <button
+                                onClick={() => handleConvert(doc.id)}
+                                className="p-1.5 text-blue-600 hover:text-blue-800 rounded hover:bg-blue-50 inline-block"
+                                title="Convertir en Facture"
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                              </button>
+                            )}
+
+                            {/* Record Payment */}
+                            {doc.type === 'FACTURE' && !isPaid && (
+                              <button
+                                onClick={() => {
+                                  setPaymentDoc(doc);
+                                  setPaymentAmount(doc.balanceDue || netTotal);
+                                }}
+                                className="p-1.5 text-emerald-600 hover:text-emerald-800 rounded hover:bg-emerald-50 inline-block"
+                                title="Enregistrer un paiement"
+                              >
+                                <CreditCard className="w-4 h-4" />
+                              </button>
+                            )}
+
+                            {/* Delete Draft */}
+                            {doc.status === 'BROUILLON' && (
+                              <button
+                                onClick={() => handleDelete(doc.id)}
+                                className="p-1.5 text-red-500 hover:text-red-700 rounded hover:bg-red-50 inline-block"
+                                title="Supprimer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -297,7 +388,7 @@ export default function DocumentsPage() {
       {/* Record Payment Modal */}
       {paymentDoc && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-900 border-b pb-2">
               Saisir un Paiement pour {paymentDoc.number}
             </h3>

@@ -125,73 +125,146 @@ export default function ClientsPage() {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
-                    <th className="py-3 px-4">Client</th>
-                    <th className="py-3 px-3">Type</th>
-                    <th className="py-3 px-4">Wilaya & Contact</th>
-                    <th className="py-3 px-4 text-right">Total Facturé</th>
-                    <th className="py-3 px-4 text-right">Reste Dû</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredClients.map((client) => {
-                    const clientDocs = documents.filter((d) => d.clientId === client.id);
-                    const totalInvoiced = clientDocs.reduce((acc, d) => acc + (d.totalTTC || 0), 0);
-                    const totalBalance = clientDocs.reduce((acc, d) => acc + (d.balanceDue || 0), 0);
+            <div>
+              {/* Mobile Card View */}
+              <div className="space-y-3 p-4 md:hidden">
+                {filteredClients.map((client) => {
+                  const clientDocs = documents.filter((d) => d.clientId === client.id);
+                  const totalInvoiced = clientDocs.reduce((acc, d) => acc + (d.totalTTC || 0), 0);
+                  const totalBalance = clientDocs.reduce((acc, d) => acc + (d.balanceDue || 0), 0);
 
-                    return (
-                      <tr key={client.id} className="hover:bg-slate-50/80 transition">
-                        <td className="py-3.5 px-4">
-                          <div className="font-bold text-slate-900">{client.name}</div>
-                          <div className="text-[11px] text-slate-500 flex gap-2">
+                  return (
+                    <div key={client.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="font-bold text-slate-900 text-sm">{client.name}</div>
+                          <div className="text-[11px] text-slate-500 flex flex-wrap gap-2 mt-0.5">
                             {client.nif && <span>NIF: {client.nif}</span>}
                             {client.rc && <span>RC: {client.rc}</span>}
                           </div>
-                        </td>
+                        </div>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            client.type === 'BUSINESS'
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {client.type === 'BUSINESS' ? 'Société' : 'Particulier'}
+                        </span>
+                      </div>
 
-                        <td className="py-3.5 px-3">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              client.type === 'BUSINESS'
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-slate-100 text-slate-700'
-                            }`}
-                          >
-                            {client.type === 'BUSINESS' ? 'Société' : 'Particulier'}
-                          </span>
-                        </td>
+                      {(client.wilaya || client.phone) && (
+                        <div className="text-xs text-slate-600 flex flex-wrap gap-x-4 gap-y-1">
+                          {client.wilaya && (
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="w-3 h-3 text-slate-400" />
+                              <span>{client.wilaya}</span>
+                            </div>
+                          )}
+                          {client.phone && (
+                            <div className="flex items-center space-x-1">
+                              <Phone className="w-3 h-3 text-slate-400" />
+                              <span>{client.phone}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
-                        <td className="py-3.5 px-4 text-slate-600 text-xs space-y-0.5">
-                          {client.wilaya && <div className="flex items-center space-x-1"><MapPin className="w-3 h-3 text-slate-400" /><span>{client.wilaya}</span></div>}
-                          {client.phone && <div className="flex items-center space-x-1"><Phone className="w-3 h-3 text-slate-400" /><span>{client.phone}</span></div>}
-                        </td>
+                      <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200">
+                        <div>
+                          <span className="text-slate-500 block text-[10px]">Total Facturé</span>
+                          <span className="font-mono font-bold text-slate-900">{formatDA(totalInvoiced)}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-slate-500 block text-[10px]">Reste Dû</span>
+                          <span className="font-mono font-bold text-amber-700">{formatDA(totalBalance)}</span>
+                        </div>
+                      </div>
 
-                        <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900">
-                          {formatDA(totalInvoiced)}
-                        </td>
+                      <div className="pt-2 border-t border-slate-200/60 flex justify-end">
+                        <button
+                          onClick={() => handleDeleteClient(client.id)}
+                          className="px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 rounded-lg flex items-center space-x-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Supprimer</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
 
-                        <td className="py-3.5 px-4 text-right font-mono font-bold text-amber-700">
-                          {formatDA(totalBalance)}
-                        </td>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
+                      <th className="py-3 px-4">Client</th>
+                      <th className="py-3 px-3">Type</th>
+                      <th className="py-3 px-4">Wilaya & Contact</th>
+                      <th className="py-3 px-4 text-right">Total Facturé</th>
+                      <th className="py-3 px-4 text-right">Reste Dû</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredClients.map((client) => {
+                      const clientDocs = documents.filter((d) => d.clientId === client.id);
+                      const totalInvoiced = clientDocs.reduce((acc, d) => acc + (d.totalTTC || 0), 0);
+                      const totalBalance = clientDocs.reduce((acc, d) => acc + (d.balanceDue || 0), 0);
 
-                        <td className="py-3.5 px-4 text-right space-x-2">
-                          <button
-                            onClick={() => handleDeleteClient(client.id)}
-                            className="p-1.5 text-red-500 hover:text-red-700 rounded hover:bg-red-50 inline-block"
-                            title="Supprimer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                      return (
+                        <tr key={client.id} className="hover:bg-slate-50/80 transition">
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-slate-900">{client.name}</div>
+                            <div className="text-[11px] text-slate-500 flex gap-2">
+                              {client.nif && <span>NIF: {client.nif}</span>}
+                              {client.rc && <span>RC: {client.rc}</span>}
+                            </div>
+                          </td>
+
+                          <td className="py-3.5 px-3">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                client.type === 'BUSINESS'
+                                  ? 'bg-purple-100 text-purple-800'
+                                  : 'bg-slate-100 text-slate-700'
+                              }`}
+                            >
+                              {client.type === 'BUSINESS' ? 'Société' : 'Particulier'}
+                            </span>
+                          </td>
+
+                          <td className="py-3.5 px-4 text-slate-600 text-xs space-y-0.5">
+                            {client.wilaya && <div className="flex items-center space-x-1"><MapPin className="w-3 h-3 text-slate-400" /><span>{client.wilaya}</span></div>}
+                            {client.phone && <div className="flex items-center space-x-1"><Phone className="w-3 h-3 text-slate-400" /><span>{client.phone}</span></div>}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900">
+                            {formatDA(totalInvoiced)}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-right font-mono font-bold text-amber-700">
+                            {formatDA(totalBalance)}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-right space-x-2">
+                            <button
+                              onClick={() => handleDeleteClient(client.id)}
+                              className="p-1.5 text-red-500 hover:text-red-700 rounded hover:bg-red-50 inline-block"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -200,7 +273,7 @@ export default function ClientsPage() {
       {/* Modal Add Client */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-900 border-b pb-2">
               Nouveau Client dans le CRM
             </h3>

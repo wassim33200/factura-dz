@@ -227,7 +227,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialData }) =
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 pb-16">
+    <div className="min-h-screen bg-slate-100 text-slate-900 pb-24 sm:pb-16">
       {/* Top Header Bar */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm px-4 sm:px-8 py-3.5 flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -239,10 +239,10 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialData }) =
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-lg font-bold text-[#1C4A3D]">
+            <h1 className="text-base sm:text-lg font-bold text-[#1C4A3D]">
               {initialData ? 'Éditer le document' : 'Créer un nouveau document'}
             </h1>
-            <p className="text-xs text-slate-500 font-mono">{docNumber}</p>
+            <p className="text-[11px] sm:text-xs text-slate-500 font-mono">{docNumber}</p>
           </div>
         </div>
 
@@ -250,7 +250,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialData }) =
         <div className="flex md:hidden bg-slate-100 p-1 rounded-lg border border-slate-200">
           <button
             onClick={() => setMobileTab('form')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md flex items-center space-x-1 ${
+            className={`px-2.5 py-1 text-xs font-semibold rounded-md flex items-center space-x-1 ${
               mobileTab === 'form' ? 'bg-white shadow text-[#1C4A3D]' : 'text-slate-600'
             }`}
           >
@@ -259,16 +259,16 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialData }) =
           </button>
           <button
             onClick={() => setMobileTab('preview')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md flex items-center space-x-1 ${
+            className={`px-2.5 py-1 text-xs font-semibold rounded-md flex items-center space-x-1 ${
               mobileTab === 'preview' ? 'bg-white shadow text-[#1C4A3D]' : 'text-slate-600'
             }`}
           >
             <Eye className="w-3.5 h-3.5" />
-            <span>Aperçu A4</span>
+            <span>Aperçu</span>
           </button>
         </div>
 
-        {/* Action Buttons */}
+        {/* Desktop Action Buttons */}
         <div className="hidden sm:flex items-center space-x-3">
           <button
             onClick={() => handleSave('BROUILLON')}
@@ -593,10 +593,29 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialData }) =
         </div>
       </div>
 
+      {/* Mobile Sticky Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 p-3 sm:hidden shadow-lg flex items-center justify-between gap-3">
+        <button
+          onClick={() => handleSave('BROUILLON')}
+          disabled={isSaving}
+          className="flex-1 py-2.5 px-3 text-xs font-bold border border-slate-300 rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition shadow-sm text-center"
+        >
+          Brouillon
+        </button>
+        <button
+          onClick={() => handleSave('ENVOYE')}
+          disabled={isSaving}
+          className="flex-1 py-2.5 px-3 text-xs font-bold bg-[#1C4A3D] text-white rounded-xl hover:bg-[#15382e] transition shadow-md flex items-center justify-center space-x-1.5"
+        >
+          <Save className="w-4 h-4" />
+          <span>Enregistrer</span>
+        </button>
+      </div>
+
       {/* Modal: New Client Inline Dialog */}
       {showClientModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-900 border-b pb-2">
               Ajouter un Nouveau Client
             </h3>

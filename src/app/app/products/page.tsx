@@ -113,41 +113,66 @@ export default function ProductsPage() {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
-                    <th className="py-3 px-4">Désignation</th>
-                    <th className="py-3 px-3">Unité</th>
-                    <th className="py-3 px-4 text-right">Prix Unitaire HT</th>
-                    <th className="py-3 px-3 text-center">Taux TVA</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-3.5 px-4 font-bold text-slate-900">{product.designation}</td>
-                      <td className="py-3.5 px-3 text-slate-500">{product.unit}</td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-[#1C4A3D]">
-                        {formatDA(product.defaultUnitPrice)}
-                      </td>
-                      <td className="py-3.5 px-3 text-center font-mono font-semibold text-slate-700">
-                        {product.defaultTvaRate}%
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={() => handleDeleteProduct(product.id)}
-                          className="p-1.5 text-red-500 hover:text-red-700 rounded hover:bg-red-50 inline-block"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
+            <div>
+              {/* Mobile Card View */}
+              <div className="space-y-3 p-4 md:hidden">
+                {filteredProducts.map((product) => (
+                  <div key={product.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+                    <div className="font-bold text-slate-900 text-sm">{product.designation}</div>
+                    <div className="flex justify-between items-center text-xs pt-1.5 border-t border-slate-200">
+                      <span className="text-slate-500">Unité: <strong>{product.unit}</strong> | TVA: <strong>{product.defaultTvaRate}%</strong></span>
+                      <span className="font-mono font-bold text-[#1C4A3D] text-sm">{formatDA(product.defaultUnitPrice)}</span>
+                    </div>
+                    <div className="pt-2 border-t border-slate-200/60 flex justify-end">
+                      <button
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 rounded-lg flex items-center space-x-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Supprimer</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
+                      <th className="py-3 px-4">Désignation</th>
+                      <th className="py-3 px-3">Unité</th>
+                      <th className="py-3 px-4 text-right">Prix Unitaire HT</th>
+                      <th className="py-3 px-3 text-center">Taux TVA</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredProducts.map((product) => (
+                      <tr key={product.id} className="hover:bg-slate-50/80 transition">
+                        <td className="py-3.5 px-4 font-bold text-slate-900">{product.designation}</td>
+                        <td className="py-3.5 px-3 text-slate-500">{product.unit}</td>
+                        <td className="py-3.5 px-4 text-right font-mono font-bold text-[#1C4A3D]">
+                          {formatDA(product.defaultUnitPrice)}
+                        </td>
+                        <td className="py-3.5 px-3 text-center font-mono font-semibold text-slate-700">
+                          {product.defaultTvaRate}%
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="p-1.5 text-red-500 hover:text-red-700 rounded hover:bg-red-50 inline-block"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -156,7 +181,7 @@ export default function ProductsPage() {
       {/* Add Product Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-900 border-b pb-2">
               Ajouter au Catalogue
             </h3>

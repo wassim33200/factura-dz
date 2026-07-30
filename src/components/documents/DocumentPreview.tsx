@@ -27,10 +27,10 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ document: doc,
   const isFacture = (doc.type || 'FACTURE') === 'FACTURE';
 
   return (
-    <div className="relative w-full max-w-[800px] mx-auto bg-white text-slate-900 shadow-xl border border-slate-200 p-8 sm:p-12 font-sans text-xs sm:text-sm select-none leading-relaxed transition-all rounded-sm print:shadow-none print:border-none print:p-0">
+    <div className="relative w-full max-w-[800px] mx-auto bg-white text-slate-900 shadow-xl border border-slate-200 p-4 sm:p-8 md:p-12 font-sans text-xs sm:text-sm select-none leading-relaxed transition-all rounded-sm print:shadow-none print:border-none print:p-0">
       {/* PAYÉ Stamp Overlay */}
       {showPaidStamp && (
-        <div className="absolute top-36 right-16 z-20 transform rotate-[-15deg] border-4 border-amber-600/80 text-amber-700 font-extrabold text-3xl sm:text-4xl tracking-widest px-6 py-2 rounded-lg opacity-85 shadow-lg select-none pointer-events-none">
+        <div className="absolute top-28 right-6 sm:top-36 sm:right-16 z-20 transform rotate-[-15deg] border-4 border-amber-600/80 text-amber-700 font-extrabold text-2xl sm:text-4xl tracking-widest px-4 py-1 sm:px-6 sm:py-2 rounded-lg opacity-85 shadow-lg select-none pointer-events-none">
           PAYÉ
         </div>
       )}
