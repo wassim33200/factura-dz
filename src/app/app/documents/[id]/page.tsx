@@ -23,9 +23,14 @@ import {
 export default function DocumentDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string }> | { id: string };
 }) {
-  const { id } = use(params);
+  const resolvedParams = use(
+    (params && typeof (params as any)?.then === 'function'
+      ? params
+      : Promise.resolve(params)) as Promise<{ id: string }>
+  );
+  const id = resolvedParams?.id || '';
   const router = useRouter();
   const { repositories, isGuest } = useRepository();
   const [doc, setDoc] = useState<DocumentData | null>(null);

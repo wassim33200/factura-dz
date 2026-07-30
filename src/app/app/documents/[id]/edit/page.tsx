@@ -8,9 +8,14 @@ import { DocumentData } from '@/lib/types';
 export default function EditDocumentPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string }> | { id: string };
 }) {
-  const { id } = use(params);
+  const resolvedParams = use(
+    (params && typeof (params as any)?.then === 'function'
+      ? params
+      : Promise.resolve(params)) as Promise<{ id: string }>
+  );
+  const id = resolvedParams?.id || '';
   const { repositories } = useRepository();
   const [doc, setDoc] = useState<DocumentData | null>(null);
   const [loading, setLoading] = useState(true);
