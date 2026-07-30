@@ -35,6 +35,7 @@ export default function DocumentDetailPage({
   const { repositories, isGuest } = useRepository();
   const [doc, setDoc] = useState<DocumentData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
 
   // Payment modal state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -117,7 +118,6 @@ export default function DocumentDetailPage({
   const isDraft = doc.status === 'BROUILLON';
 
   // Handle PDF Export
-  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
 
   const handleDownloadPdf = async () => {
     setIsPdfGenerating(true);
