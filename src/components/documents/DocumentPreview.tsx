@@ -116,7 +116,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ document: doc,
           <tbody className="divide-y divide-slate-200">
             {lines.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-6 text-slate-400 italic">
+                <td colSpan={7} className="text-center py-6 text-slate-400 italic">
                   Aucun article ajouté
                 </td>
               </tr>

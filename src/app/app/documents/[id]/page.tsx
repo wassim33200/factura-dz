@@ -6,12 +6,10 @@ import { useRouter } from 'next/navigation';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { GuestBanner } from '@/components/layout/GuestBanner';
 import { DocumentPreview } from '@/components/documents/DocumentPreview';
-import { DocumentPdfTemplate } from '@/components/pdf/DocumentPdfTemplate';
 import { useRepository } from '@/lib/repository/useRepository';
 import { DocumentData, PaymentMethod } from '@/lib/types';
 import { formatDA } from '@/lib/utils/format';
 import { NumberInput } from '@/components/ui/NumberInput';
-import { pdf } from '@react-pdf/renderer';
 
 import {
   Download,
@@ -20,7 +18,6 @@ import {
   ArrowLeft,
   CreditCard,
   RefreshCw,
-  Check,
 } from 'lucide-react';
 
 export default function DocumentDetailPage({
@@ -42,11 +39,33 @@ export default function DocumentDetailPage({
 
   const loadDoc = async () => {
     try {
-      const data = await repositories.documents.getById(id);
+      let data = await repositories.documents.getById(id);
+      
+      // Fallback: if document not found in remote repo but ID has local prefix doc_
+      if (!data && id.startsWith('doc_')) {
+        const { LocalDocumentRepository } = await import('@/lib/repository/localRepository');
+        const localRepo = new LocalDocumentRepository();
+        data = await localRepo.getById(id);
+      }
+
       setDoc(data);
       if (data) setPaymentAmount(data.balanceDue);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load document:', err);
+      // Secondary fallback if primary getById threw (e.g. API 401/500)
+      if (id.startsWith('doc_')) {
+        try {
+          const { LocalDocumentRepository } = await import('@/lib/repository/localRepository');
+          const localRepo = new LocalDocumentRepository();
+          const localData = await localRepo.getById(id);
+          if (localData) {
+            setDoc(localData);
+            setPaymentAmount(localData.balanceDue);
+          }
+        } catch (localErr) {
+          console.error('Local fallback failed:', localErr);
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -66,11 +85,25 @@ export default function DocumentDetailPage({
 
   if (!doc) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 space-y-4">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 space-y-4 text-center">
         <h2 className="text-xl font-bold text-slate-800">Document introuvable</h2>
-        <Link href="/app/documents" className="text-[#1C4A3D] font-semibold underline">
-          Retour à la liste
-        </Link>
+        <p className="text-sm text-slate-600 max-w-md">
+          Ce document n&apos;existe pas ou a été créé sur un autre appareil / navigateur en mode invité.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => router.back()}
+            className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+          >
+            Retour
+          </button>
+          <Link
+            href="/app/documents"
+            className="px-4 py-2 text-xs font-semibold text-white bg-[#1C4A3D] rounded-lg hover:bg-[#15382e]"
+          >
+            Voir tous les documents
+          </Link>
+        </div>
       </div>
     );
   }
@@ -82,10 +115,13 @@ export default function DocumentDetailPage({
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
 
   const handleDownloadPdf = async () => {
-    if (isGuest) {
-      // Guest mode: generate PDF blob in-browser via @react-pdf/renderer
-      setIsPdfGenerating(true);
-      try {
+    setIsPdfGenerating(true);
+    try {
+      if (isGuest || doc.id.startsWith('doc_')) {
+        // Guest / Local mode: generate PDF blob in-browser via @react-pdf/renderer
+        const { pdf } = await import('@react-pdf/renderer');
+        const { DocumentPdfTemplate } = await import('@/components/pdf/DocumentPdfTemplate');
+
         const element = React.createElement(DocumentPdfTemplate, { doc: doc as any });
         const blob = await pdf(element as any).toBlob();
         const url = URL.createObjectURL(blob);
@@ -94,13 +130,13 @@ export default function DocumentDetailPage({
         a.download = `${doc.number}.pdf`;
         a.click();
         URL.revokeObjectURL(url);
-      } catch (err) {
-        console.error('Guest PDF generation failed:', err);
-      } finally {
-        setIsPdfGenerating(false);
+      } else {
+        window.open(`/api/documents/${doc.id}/pdf`, '_blank');
       }
-    } else {
-      window.open(`/api/documents/${doc.id}/pdf`, '_blank');
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+    } finally {
+      setIsPdfGenerating(false);
     }
   };
 
